@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Sísmico en Tiempo Real</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Componentes de iconos SVG
+    const Activity = ({ className }) => (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+    );
+
+    const MapPin = ({ className }) => (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+    );
+
+    const Layers = ({ className }) => (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+    );
+
+    const Clock = ({ className }) => (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    );
+
+    const AlertTriangle = ({ className }) => (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+    );
+
+    function SeismicMonitor() {
+        const [events, setEvents] = useState([]);
+        const [isConnected, setIsConnected] = useState(false);
+        const [sseUrl, setSseUrl] = useState('');
+        const [inputUrl, setInputUrl] = useState('http://localhost:8080/earthquakes/realtime');
+        const eventSourceRef = useRef(null);
+
+        const connectToSSE = (url) => {
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+            }
+
+            try {
+                const eventSource = new EventSource(url);
+                eventSourceRef.current = eventSource;
+
+                eventSource.addEventListener('tremor-events', (event) => {
+                    console.log("Datos del evento recibidos:", event.data);
+                    try {
+                        const newEvent = JSON.parse(event.data);
+                        console.log("Nuevo evento parseado:", newEvent);
+                        setEvents(prevEvents => [newEvent, ...prevEvents].slice(0, 50));
+                    } catch (error) {
+                        console.error("Error al parsear el JSON:", error);
+                    }
+                });
+
+                eventSource.onopen = () => {
+                    console.log("Conexión SSE establecida");
+                    setIsConnected(true);
+                    setSseUrl(url);
+                };
+
+                eventSource.onerror = (error) => {
+                    console.error("Error en la conexión SSE:", error);
+                    setIsConnected(false);
+                };
+
+            } catch (error) {
+                console.error("Error conectando a SSE:", error);
+                setIsConnected(false);
+            }
+        };
+
+        const handleConnect = () => {
+            if (inputUrl.trim()) {
+                connectToSSE(inputUrl.trim());
+            }
+        };
+
+        const handleDisconnect = () => {
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+                setIsConnected(false);
+                setSseUrl('');
+            }
+        };
+
+        useEffect(() => {
+            // Auto-conectar al cargar la página
+            if (inputUrl) {
+                connectToSSE(inputUrl);
+            }
+
+            return () => {
+                if (eventSourceRef.current) {
+                    eventSourceRef.current.close();
+                }
+            };
+        }, []);
+
+        const getIntensityColor = (intensity) => {
+            if (intensity >= 7) return 'bg-red-500';
+            if (intensity >= 6) return 'bg-orange-500';
+            if (intensity >= 5) return 'bg-yellow-500';
+            if (intensity >= 4) return 'bg-blue-500';
+            return 'bg-green-500';
+        };
+
+        const getIntensityLabel = (intensity) => {
+            if (intensity >= 7) return 'Muy Fuerte';
+            if (intensity >= 6) return 'Fuerte';
+            if (intensity >= 5) return 'Moderado';
+            if (intensity >= 4) return 'Ligero';
+            return 'Menor';
+        };
+
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-6">
+                <div className="max-w-7xl mx-auto">
+                    {/* Header */}
+                    <div className="mb-8">
+                        <div className="flex items-center gap-3 mb-2">
+                            <Activity className="w-10 h-10 text-red-500" />
+                            <h1 className="text-4xl font-bold">Monitor Sísmico</h1>
+                        </div>
+                        <p className="text-slate-400">Visualización de eventos telúricos en tiempo real</p>
+                    </div>
+
+                    {/* Connection Panel */}
+                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-6 mb-6 border border-slate-700">
+                        <div className="flex gap-3 mb-4">
+                            <input
+                                type="text"
+                                value={inputUrl}
+                                onChange={(e) => setInputUrl(e.target.value)}
+                                placeholder="URL del servidor SSE"
+                                className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                                disabled={isConnected}
+                            />
+                            {!isConnected ? (
+                                <button
+                                    onClick={handleConnect}
+                                    className="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={!inputUrl.trim()}
+                                >
+                                    Conectar
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleDisconnect}
+                                    className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg font-medium transition-colors"
+                                >
+                                    Desconectar
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                            <span className="text-sm text-slate-400">
+                                {isConnected ? `Conectado a ${sseUrl}` : 'Desconectado'}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-4 border border-slate-700">
+                            <div className="text-slate-400 text-sm mb-1">Total de Eventos</div>
+                            <div className="text-3xl font-bold">{events.length}</div>
+                        </div>
+                        <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-4 border border-slate-700">
+                            <div className="text-slate-400 text-sm mb-1">Intensidad Promedio</div>
+                            <div className="text-3xl font-bold">
+                                {events.length > 0 ? (events.reduce((acc, e) => acc + e.intensity, 0) / events.length).toFixed(1) : '0.0'}
+                            </div>
+                        </div>
+                        <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-4 border border-slate-700">
+                            <div className="text-slate-400 text-sm mb-1">Profundidad Promedio</div>
+                            <div className="text-3xl font-bold">
+                                {events.length > 0 ? (events.reduce((acc, e) => acc + e.deepness, 0) / events.length).toFixed(1) : '0.0'} km
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Events List */}
+                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg border border-slate-700 overflow-hidden">
+                        <div className="p-4 bg-slate-900/50 border-b border-slate-700">
+                            <h2 className="text-xl font-semibold flex items-center gap-2">
+                                <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                                Eventos Recientes
+                            </h2>
+                        </div>
+
+                        <div className="max-h-[600px] overflow-y-auto">
+                            {events.length === 0 ? (
+                                <div className="p-12 text-center text-slate-500">
+                                    <Activity className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                                    <p>No hay eventos registrados aún</p>
+                                    <p className="text-sm mt-2">
+                                        {isConnected ? 'Esperando datos del servidor...' : 'Conecta a un servidor SSE para comenzar'}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-slate-700">
+                                    {events.map((event, index) => (
+                                        <div
+                                            key={`${event.id}-${index}`}
+                                            className="p-4 hover:bg-slate-700/30 transition-colors"
+                                        >
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <div className={`${getIntensityColor(event.intensity)} w-2 h-2 rounded-full`} />
+                                                        <span className="font-semibold text-lg">
+                                                            Magnitud {event.intensity.toFixed(1)}
+                                                        </span>
+                                                        <span className={`text-xs px-2 py-1 rounded ${getIntensityColor(event.intensity)} bg-opacity-20`}>
+                                                            {getIntensityLabel(event.intensity)}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-slate-400">
+                                                        <div className="flex items-center gap-2">
+                                                            <Layers className="w-4 h-4" />
+                                                            <span>Profundidad: {event.deepness.toFixed(1)} km</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <MapPin className="w-4 h-4" />
+                                                            <span>
+                                                                {event.geography.latitude.toFixed(4)}°, {event.geography.longitude.toFixed(4)}°
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <Clock className="w-4 h-4" />
+                                                            <span>{new Date(event.date).toLocaleString('es-ES')}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<SeismicMonitor />);
+</script>
+
+</body>
+</html>

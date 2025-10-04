@@ -1,0 +1,16 @@
+### Send POST request with json body
+POST http://localhost:8080/earthquakes
+Content-Type: application/json
+
+{
+  "intensity": 8.2,
+  "deepness": 30.0,
+  "geo": {
+    "latitude": -33.4500,
+    "longitude": -70.6700
+  }
+}
+
+### GET request with parameter
+GET http://localhost:8080/earthquakes?latitude=-33.4489&longitude=-70.6693&radius=10&date=10-04-2025
+Accept: application/json
