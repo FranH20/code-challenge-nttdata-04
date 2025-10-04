@@ -1,29 +1,39 @@
 ####
-# This Dockerfile is used in order to build a container that runs the Quarkus application in native (no JVM) mode.
-#
-# Before building the container image run:
-#
-# ./mvnw package -Dnative
-#
-# Then, build the image with:
-#
-# docker build -f src/main/docker/Dockerfile.native -t quarkus/code-challenge-nttdata-04 .
-#
-# Then run the container using:
-#
-# docker run -i --rm -p 8080:8080 quarkus/code-challenge-nttdata-04
-#
-# The ` registry.access.redhat.com/ubi9/ubi-minimal:9.6` base image is based on UBI 9.
-# To use UBI 8, switch to `quay.io/ubi8/ubi-minimal:8.10`.
-###
+# Dockerfile NATIVE para Render.com
+# Compila la aplicación Quarkus en modo nativo (sin JVM)
+####
+
+## Stage 1: Build de la aplicación nativa con GraalVM
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
+
+# Copiar todo el proyecto
+COPY --chown=quarkus:quarkus . /code
+
+USER quarkus
+WORKDIR /code
+
+# Compilar a ejecutable nativo
+# -Pnative activa el perfil nativo
+# -DskipTests omite tests para acelerar build
+RUN ./mvnw clean package -Pnative -Dprofile=prod -DskipTests
+
+## Stage 2: Imagen final minimalista solo con el ejecutable
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.6
+
 WORKDIR /work/
+
+# Copiar SOLO el ejecutable nativo compilado (no hay JVM)
+COPY --from=build --chown=1001:root --chmod=0755 /code/target/*-runner /work/application
+
+# Configurar permisos
 RUN chown 1001 /work \
     && chmod "g+rwX" /work \
     && chown 1001:root /work
-COPY --chown=1001:root --chmod=0755 target/*-runner /work/application
 
+# Render asigna el puerto vía variable PORT
 EXPOSE 8080
 USER 1001
 
-ENTRYPOINT ["./application", "-Dquarkus.http.host=0.0.0.0"]
+# Ejecutar el binario nativo
+# ${PORT:-8080} usa la variable PORT de Render, o 8080 por defecto
+CMD ["sh", "-c", "./application -Dquarkus.http.host=0.0.0.0 -Dquarkus.http.port=${PORT:-8080}"]
