@@ -3,11 +3,11 @@ POST http://localhost:8080/earthquakes
 Content-Type: application/json
 
 {
-  "intensity": 8.2,
-  "deepness": 30.0,
+  "intensity": 3.1,
+  "deepness": 5.2,
   "geo": {
-    "latitude": -33.4500,
-    "longitude": -70.6700
+    "latitude": -33.4478,
+    "longitude": -70.6686
   }
 }
 

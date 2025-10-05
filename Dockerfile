@@ -16,7 +16,7 @@ RUN ./mvnw -B org.apache.maven.plugins:maven-dependency-plugin:3.8.1:go-offline
 COPY --chown=quarkus:quarkus src /code/src
 
 # Compilar a nativo
-RUN ./mvnw clean package -Pnative -Dprofile=prod -DskipTests
+RUN ./mvnw clean package -Pnative -Dquarkus.profile=prod -DskipTests
 
 ## Stage 2: Imagen final con el ejecutable nativo
 FROM quay.io/quarkus/ubi9-quarkus-micro-image:2.0

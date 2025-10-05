@@ -114,7 +114,6 @@
         };
 
         useEffect(() => {
-            // Auto-conectar al cargar la página
             if (inputUrl) {
                 connectToSSE(inputUrl);
             }
@@ -147,9 +146,12 @@
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
                     <div className="mb-8">
-                        <div className="flex items-center gap-3 mb-2">
-                            <Activity className="w-10 h-10 text-red-500" />
-                            <h1 className="text-4xl font-bold">Monitor Sísmico</h1>
+                        <div className="flex items-center gap-3 mb-2 justify-between">
+                            <div className="flex items-center gap-3">
+                                <Activity className="w-10 h-10 text-red-500" />
+                                <h1 className="text-4xl font-bold">Monitor Sísmico</h1>
+                            </div>
+                            <img src="logo.png" alt="Logo" className="h-14 w-auto" />
                         </div>
                         <p className="text-slate-400">Visualización de eventos telúricos en tiempo real</p>
                     </div>
