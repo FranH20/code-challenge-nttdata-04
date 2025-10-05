@@ -1,16 +1,16 @@
 ### Send POST request with json body
-POST http://localhost:8080/earthquakes
+POST https://code-challenge-nttdata-04.carloshuichi.workers.dev/earthquakes
 Content-Type: application/json
 
 {
-  "intensity": 3.1,
-  "deepness": 5.2,
+  "intensity": 8.2,
+  "deepness": 30.0,
   "geo": {
-    "latitude": -33.4478,
-    "longitude": -70.6686
+    "latitude": -33.4500,
+    "longitude": -70.6700
   }
 }
 
 ### GET request with parameter
-GET http://localhost:8080/earthquakes?latitude=-33.4489&longitude=-70.6693&radius=10&date=10-04-2025
+GET https://code-challenge-nttdata-04.carloshuichi.workers.dev/earthquakes?latitude=-33.4489&longitude=-70.6693&radius=10&date=2025-10-05
 Accept: application/json

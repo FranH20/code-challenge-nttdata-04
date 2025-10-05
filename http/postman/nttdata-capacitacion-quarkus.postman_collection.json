@@ -1,0 +1,87 @@
+{
+	"info": {
+		"_postman_id": "e45e7a8c-6bd0-4369-ac4d-1133f8351a5a",
+		"name": "nttdata-capacitacion-quarkus",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "10711039"
+	},
+	"item": [
+		{
+			"name": "koyeb",
+			"item": []
+		},
+		{
+			"name": "Render",
+			"item": []
+		},
+		{
+			"name": "Send earthquake",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"intensity\": 8.2,\r\n  \"deepness\": 30.0,\r\n  \"geo\": {\r\n    \"latitude\": -33.4500,\r\n    \"longitude\": -70.6700\r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://code-challenge-nttdata-04.carloshuichi.workers.dev/earthquakes",
+					"protocol": "https",
+					"host": [
+						"code-challenge-nttdata-04",
+						"carloshuichi",
+						"workers",
+						"dev"
+					],
+					"path": [
+						"earthquakes"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get earthquake within a radius",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://code-challenge-nttdata-04.carloshuichi.workers.dev/earthquakes?latitude=-33.4489&longitude=-70.6693&radius=10&date=2025-10-05",
+					"protocol": "https",
+					"host": [
+						"code-challenge-nttdata-04",
+						"carloshuichi",
+						"workers",
+						"dev"
+					],
+					"path": [
+						"earthquakes"
+					],
+					"query": [
+						{
+							"key": "latitude",
+							"value": "-33.4489"
+						},
+						{
+							"key": "longitude",
+							"value": "-70.6693"
+						},
+						{
+							"key": "radius",
+							"value": "10"
+						},
+						{
+							"key": "date",
+							"value": "2025-10-05"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
